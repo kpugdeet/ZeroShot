@@ -60,7 +60,7 @@ class loadData(object):
                     testAtt.append(line.split())
         trainAtt = np.array(trainAtt).astype(np.float64)
         testAtt = np.array(testAtt).astype(np.float64)
-        valAtt = np.array(testAtt).astype(np.float64)
+        valAtt = np.array(valAtt).astype(np.float64)
 
         # Read train image
         trainX = list()
@@ -119,7 +119,7 @@ class loadData(object):
                     testAtt.append(line.split())
         trainAtt = np.array(trainAtt).astype(np.float64)
         testAtt = np.array(testAtt).astype(np.float64)
-        valAtt = np.array(testAtt).astype(np.float64)
+        valAtt = np.array(valAtt).astype(np.float64)
 
         # Read train image
         trainX = list()
@@ -221,7 +221,7 @@ class loadData(object):
 
         trainAtt = np.array(trainAtt).astype(np.float64).mean(axis=1)
         testAtt = np.array(testAtt).astype(np.float64).mean(axis=1)
-        valAtt = np.array(testAtt).astype(np.float64).mean(axis=1)
+        valAtt = np.array(valAtt).astype(np.float64).mean(axis=1)
 
         trainX = np.array(trainX).astype(np.uint8)
         trainY = np.array(trainY).astype(np.uint8)

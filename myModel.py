@@ -8,17 +8,22 @@ class myModel (object):
     def __init__(self):
         self.x = tf.placeholder(tf.float32, name='inputImage', shape=[None, globalV.FLAGS.height, globalV.FLAGS.width, 3])
         processX = tf.subtract(tf.multiply(tf.divide(self.x, 255), 2.0), 1.0)
+
         self.y = tf.placeholder(tf.int64, name='outputClass', shape=[None])
         self.attY = tf.placeholder(tf.float32, name='outputAtt', shape=[None, globalV.FLAGS.numAtt])
+
         self.transformW = tf.placeholder(tf.float32, name='transformW', shape=[globalV.FLAGS.numAtt, None])
+
         self.isTraining = tf.placeholder(tf.bool)
         self.core_net = darknet19(processX, is_training=self.isTraining)
 
         # Attribute Layer
         wAtt = tf.get_variable(name='attWeight', shape=[1000, globalV.FLAGS.numAtt], dtype=tf.float32)
         bAtt = tf.get_variable(name='attBias', shape=[globalV.FLAGS.numAtt], dtype=tf.float32)
-        self.predAtt = tf.sigmoid(tf.add(tf.matmul(self.core_net, wAtt), bAtt))
-        attLoss = tf.losses.absolute_difference(self.predAtt, self.attY)
+        self.sumUp = tf.add(tf.matmul(self.core_net, wAtt), bAtt)
+        self.predAtt = tf.sigmoid(self.sumUp)
+
+        attLoss = tf.losses.sigmoid_cross_entropy(logits=self.sumUp, multi_class_labels=tf.round(self.attY))
         meanAttLoss = tf.reduce_mean(attLoss)
 
         # Class Loss at the last layer
@@ -27,7 +32,6 @@ class myModel (object):
 
         # Predict the output for darknet
         self.predictIndex = tf.argmax(predClass, 1)
-
 
         correctPrediction = tf.equal(tf.argmax(predClass, 1), self.y)
         self.accuracy = tf.reduce_mean(tf.cast(correctPrediction, tf.float32))
@@ -101,6 +105,7 @@ class myModel (object):
                                                                                                                             self.transformW: transformW, self.isTraining: 1})
                 losses.append(trainLoss)
                 accuracies.append(trainAccuracy)
+
             feed = {self.averageL: sum(losses) / len(losses), self.averageA: sum(accuracies) / len(accuracies)}
             summary = self.sess.run(self.merged, feed_dict=feed)
             self.trainWriter.add_summary(summary, i)

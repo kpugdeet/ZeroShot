@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from loadData import loadData
 from myModel import myModel
+from model1 import model1
 from darknetModel import darknetModel
 from vec2att import vec2att
 import tensorflow as tf
@@ -24,8 +25,8 @@ if __name__ == "__main__":
     parser.add_argument('--APYPATH', type=str, default='APY/attribute_data/', help='Path for APY dataset')
     parser.add_argument('--GOOGLE', type=str, default='GoogleNews-vectors-negative300.bin', help='Path for google Word2Vec model')
     parser.add_argument('--KEY', type=str, default='APY',help='Choose dataset (AWA2, CUB, SUN, APY)')
-    parser.add_argument('--maxSteps', type=int, default=1000, help='Number of steps to run trainer.')
-    parser.add_argument('--lr', type=float, default=5e-4, help='Initial learning rate')
+    parser.add_argument('--maxSteps', type=int, default=100, help='Number of steps to run trainer.')
+    parser.add_argument('--lr', type=float, default=1e-4, help='Initial learning rate')
     parser.add_argument('--reg', type=float, default=5e4, help='Initial regularization')
     parser.add_argument('--width', type=int, default=300, help='Width')
     parser.add_argument('--height', type=int, default=300, help='Height')
@@ -66,6 +67,7 @@ if __name__ == "__main__":
 
     # Paper Way
     def calAccPaper(yAtt, att, y, name='Train'):
+        print(yAtt.shape, att.shape)
         yAtt = np.expand_dims(yAtt, axis=1)
         tmpOut = np.divide(yAtt, att, out=np.ones((yAtt.shape[0], att.shape[0], att.shape[1])), where=att!=0)
         tmpOut = np.prod(tmpOut, axis=2)
@@ -89,11 +91,6 @@ if __name__ == "__main__":
         calAccDotProd(yAtt, att, y, name)
         calAccDotProdAvg(yAtt, att, y, name)
 
-    callAll(trainYAtt, trainAtt, trainY, 'Train')
-    callAll(valYAtt, valAtt, valY, 'Val')
-    callAll(testYAtt, testAtt, testY, 'Test')
-    print()
-
     print('Train CNN')
     s = np.arange(trainX.shape[0])
     dividePoint = int(trainX.shape[0]*0.7)
@@ -101,24 +98,22 @@ if __name__ == "__main__":
     tmpX = trainX[s]
     tmpY = trainY[s]
     # tmpYAtt = trainYAtt[s]
-    # Each class has same attribute
     trainYAtt2 = list()
     for i in range(trainY.shape[0]):
         trainYAtt2.append(trainAtt[trainY[i]])
     tmpYAtt = np.array(trainYAtt2)[s]
 
     # darknet = darknetModel()
-    # # darknet.trainDarknet(tmpX[:5], tmpY[:5], tmpX[5:10], tmpY[5:10])
-    # # print(darknet.checkCoreNet(trainX[:2]))
     # darknet.trainDarknet(tmpX[:dividePoint], tmpY[:dividePoint], tmpX[dividePoint:], tmpY[dividePoint:])
 
-    my = myModel()
-    # print(my.checkCoreNet(trainX[:2]))
-    # my.trainAtt(tmpX[:5], tmpYAtt[:5], tmpX[5:10], tmpYAtt[5:10])
-    my.trainAtt(tmpX[:dividePoint], tmpY[:dividePoint], tmpYAtt[:dividePoint], tmpX[dividePoint:], tmpY[dividePoint:], tmpYAtt[dividePoint:], np.ceil(trainAtt.T))
+    # my = myModel()
+    # my.trainAtt(tmpX[:dividePoint], tmpY[:dividePoint], tmpYAtt[:dividePoint], tmpX[dividePoint:], tmpY[dividePoint:], tmpYAtt[dividePoint:], np.ceil(trainAtt.T))
 
-    # print(my.predict(testX[:50], np.ceil(testAtt.T)))
-    # print(testY[:50])
+    model = model1()
+    model.trainAtt(tmpX[:dividePoint], tmpY[:dividePoint], tmpYAtt[:dividePoint], tmpX[dividePoint:], tmpY[dividePoint:],tmpYAtt[dividePoint:], np.ceil(trainAtt.T))
+
+    # # print(my.predict(testX[:50], np.ceil(testAtt.T)))
+    # # print(testY[:50])
     # callAll(my.predAtts(trainX), trainAtt, trainY, 'Train')
     # callAll(my.predAtts(valX), valAtt, valY, 'Val')
     # callAll(my.predAtts(testX), testAtt, testY, 'Test')
@@ -157,7 +152,6 @@ if __name__ == "__main__":
     # tmpY = trainY[s]
     # print(model.predict(tmpX[:10]))
     # print(tmpY[:10])
-
 
 
     # print (trainX[0][200])
