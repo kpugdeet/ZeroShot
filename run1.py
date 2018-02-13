@@ -126,7 +126,7 @@ if __name__ == "__main__":
 
     horseInput = []
     for k in range(unseenY.shape[0]):
-        if unseenY[k] == 31:
+        if unseenY[k] == 24:
             horseInput.append(unseenX[k])
     horseInput = np.array(horseInput)
 
@@ -164,12 +164,12 @@ if __name__ == "__main__":
                            ticktext = b,
                            tickvals = np.arange(len(b))))
     fig = go.Figure(data=data, layout=layout)
-    py.image.save_as(fig, filename=globalV.FLAGS.KEY + '_Horse.png')
+    py.image.save_as(fig, filename=globalV.FLAGS.KEY + '_Att_Zebra.png')
 
     print('\nCheck predict output')
     # predictLabel = model.predict(horseInput[:10], allClassAtt)
     predictLabel = classifier.predict(a)
-    print('Save image to '+globalV.FLAGS.KEY+'.png')
+    print('Save image to '+globalV.FLAGS.KEY+'_Zebra.png')
     plt.figure(figsize=(6, 24))
     for i in range(10):
         plt.subplot(10, 2, i+1)
@@ -177,7 +177,7 @@ if __name__ == "__main__":
         plt.imshow(horseInput[i], aspect='auto')
         plt.axis('off')
     plt.tight_layout()
-    plt.savefig(globalV.FLAGS.KEY+'.png')
+    plt.savefig(globalV.FLAGS.KEY+'_Zebra.png')
     plt.clf()
     print(trainClass)
 
