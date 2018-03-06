@@ -47,7 +47,7 @@ class darknetModel (object):
         self.saver = tf.train.Saver(max_to_keep=None)
 
         # Log directory
-        if globalV.FLAGS.NEW == 1:
+        if globalV.FLAGS.TD == 1:
             if tf.gfile.Exists(globalV.FLAGS.BASEDIR + globalV.FLAGS.KEY + '/darknet/logs'):
                 tf.gfile.DeleteRecursively(globalV.FLAGS.BASEDIR + globalV.FLAGS.KEY + '/darknet/logs')
             tf.gfile.MakeDirs(globalV.FLAGS.BASEDIR + globalV.FLAGS.KEY + '/darknet/logs')
@@ -57,7 +57,7 @@ class darknetModel (object):
         # Start point and log
         self.Start = 1
         self.Check = 10
-        if globalV.FLAGS.NEW == 0:
+        if globalV.FLAGS.TD == 0:
             self.restoreModel()
 
 

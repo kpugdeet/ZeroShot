@@ -98,7 +98,7 @@ class model2 (object):
         self.saver = tf.train.Saver(max_to_keep=None)
 
         # Log directory
-        if globalV.FLAGS.NEW == 1:
+        if globalV.FLAGS.TA == 1:
             if tf.gfile.Exists(globalV.FLAGS.BASEDIR + globalV.FLAGS.KEY + '/model2/logs'):
                 tf.gfile.DeleteRecursively(globalV.FLAGS.BASEDIR + globalV.FLAGS.KEY + '/model2/logs')
             tf.gfile.MakeDirs(globalV.FLAGS.BASEDIR + globalV.FLAGS.KEY + '/model2/logs')
@@ -108,13 +108,12 @@ class model2 (object):
         # Start point and log
         self.Start = 1
         self.Check = 10
-        if globalV.FLAGS.NEW == 0:
+        if globalV.FLAGS.TA == 0:
             self.restoreModel()
         else:
             variableToRestore = tf.contrib.slim.get_variables_to_restore(exclude=['wF_H', 'bF_H', 'wH_A', 'bH_A', 'wH', 'bH', 'wS', 'bS'])
             saverDarknet = tf.train.Saver(variableToRestore)
             saverDarknet.restore(self.sess, globalV.FLAGS.BASEDIR + globalV.FLAGS.KEY + '/darknet/model/model.ckpt')
-
 
     def restoreModel(self):
         self.saver.restore(self.sess, globalV.FLAGS.BASEDIR + globalV.FLAGS.KEY + '/model2/model/model.ckpt')
@@ -199,5 +198,12 @@ class model2 (object):
         return self.sess.run(self.coreNet, feed_dict={self.x: trainX, self.isTraining: 0})
 
     def getAttribute(self, trainX):
-        return self.sess.run(self.outAtt, feed_dict={self.x: trainX, self.isTraining: 0})
+        outputAtt = None
+        for j in range(0, trainX.shape[0], globalV.FLAGS.batchSize):
+            xBatch = trainX[j:j + globalV.FLAGS.batchSize]
+            if outputAtt is None:
+                outputAtt = self.sess.run(self.outAtt, feed_dict={self.x: xBatch, self.isTraining: 0})
+            else:
+                outputAtt = np.concatenate((outputAtt, self.sess.run(self.outAtt, feed_dict={self.x: xBatch, self.isTraining: 0})), axis=0)
+        return outputAtt
 

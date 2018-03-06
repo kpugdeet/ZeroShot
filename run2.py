@@ -94,42 +94,67 @@ if __name__ == "__main__":
     unseenY = np.concatenate((valY, testY), axis=0)
     unseenYAtt = np.concatenate((valYAtt2, testYAtt2), axis=0)
 
+    # Create all Classes
     allClassAtt = np.concatenate((np.concatenate((trainAtt, valAtt), axis=0), testAtt), axis=0)
     allClassName = np.concatenate((np.concatenate((trainClass, valClass), axis=0), testClass), axis=0)
     with open(globalV.FLAGS.BASEDIR + globalV.FLAGS.APYPATH + 'attribute_names.txt', 'r') as f:
         allClassAttName = [line.strip() for line in f]
 
-    # # Check SVM between mix seen and unseen
-    # tmpAtt = allClassAtt
-    # tmpClass = np.concatenate((np.zeros(trainAtt.shape[0]), np.ones(valAtt.shape[0]+testAtt.shape[0])))
-    # print(tmpAtt.shape, tmpClass.shape)
-    # from sklearn import svm
-    # clf = svm.SVC()
-    # print(clf.fit(tmpAtt, tmpClass))
-    # print(clf.score(tmpAtt, tmpClass))
+    # Selected Seen Classes
+    seen_List = [6, 8, 12]
+    tmpX_S = []
+    tmpY_S = []
+    tmpYAtt_S = []
+    for k in range(tmpY.shape[0]):
+        if tmpY[k] in seen_List:
+            tmpX_S.append(tmpX[k])
+            tmpY_S.append(tmpY[k])
+            tmpYAtt_S.append(tmpYAtt[k])
+    tmpX_S = np.array(tmpX_S)
+    tmpY_S = np.array(tmpY_S)
+    tmpYAtt_S = np.array(tmpYAtt_S)
+    print(tmpX_S.shape, tmpY_S.shape, tmpYAtt_S.shape)
 
-    minAtt = np.min(allClassAtt, axis=0)
-    maxAtt = np.max(allClassAtt, axis=0)
-    meanAtt = np.mean(allClassAtt, axis=0)
-    stdAtt = np.std(allClassAtt, axis=0)
-    allClassNormalize = (allClassAtt - minAtt) / (maxAtt - minAtt)
+    # Selected Unseen Classes
+    unSeen_List = [19, 31]
+    unseenX_S = []
+    unseenY_S = []
+    unseenYAtt_S = []
+    for k in range(unseenY.shape[0]):
+        if unseenY[k] in unSeen_List:
+            unseenX_S.append(unseenX[k])
+            unseenY_S.append(unseenY[k])
+            unseenYAtt_S.append(unseenYAtt[k])
+    unseenX_S = np.array(unseenX_S)
+    unseenY_S = np.array(unseenY_S)
+    unseenYAtt_S = np.array(unseenYAtt_S)
+    print(unseenX_S.shape, unseenY_S.shape, unseenYAtt_S.shape)
+
+    # All selected Classes
+    allClassAtt_S = []
+    for k in range(allClassAtt.shape[0]):
+        if k in seen_List or k in unSeen_List:
+            allClassAtt_S.append(allClassAtt[k])
+    allClassAtt_S = np.array(allClassAtt_S)
+    print(allClassAtt_S.shape)
 
     # Train Network
     if globalV.FLAGS.PRE == 1:
         print('\nPre-train CNN')
         darknet = darknetModel()
         darknet.trainDarknet(tmpX[:divP], tmpY[:divP], tmpX[divP:], tmpY[divP:])
+
     elif globalV.FLAGS.PRE == 2:
         print('\nTrain all network together')
         model = model2()
-        # tmpYAtt = (tmpYAtt - minAtt) / (maxAtt - minAtt)
-        # unseenYAtt = (unseenYAtt - minAtt) / (maxAtt - minAtt)
-        model.trainAtt(tmpX, tmpY, tmpYAtt, unseenX, unseenY, unseenYAtt, allClassAtt)
+        # model.trainAtt(tmpX, tmpY, tmpYAtt, unseenX, unseenY, unseenYAtt, allClassAtt)
+        model.trainAtt(tmpX_S, tmpY_S, tmpYAtt_S, unseenX_S, unseenY_S, unseenYAtt_S, allClassAtt)
+
     elif globalV.FLAGS.PRE == 3:
         print('\nTrain classify')
         classifier = classify()
-        classifier.trainClassify(allClassAtt, np.arange(allClassAtt.shape[0]), 0.5)
-        # classifier.trainClassify(allClassNormalize, np.arange(allClassAtt.shape[0]))
+        # classifier.trainClassify(allClassAtt, np.arange(allClassAtt.shape[0]), 0.5)
+        classifier.trainClassify(allClassAtt_S, np.array([6 ,8, 12, 19, 31]), 0.5)
 
         # g1 = tf.Graph()
         # g2 = tf.Graph()
@@ -145,83 +170,82 @@ if __name__ == "__main__":
         # trainClassY = np.concatenate((tmpY, duplicateUnseenY), axis=0)
         # print(trainClassAtt.shape, trainClassY.shape)
         # classifier.trainClassify(trainClassAtt, trainClassY)
-        #
-        # attTmp = model.getAttribute(tmpX)
-        # predY = classifier.predict(attTmp)
-        # print('Seen Accuracy = {0}'.format(np.mean(np.equal(predY, tmpY))))
+
     else:
-        # Calculate Accuracy
         g1 = tf.Graph()
         g2 = tf.Graph()
         with g1.as_default():
             model = model2()
         with g2.as_default():
             classifier = classify()
-        attTmp = model.getAttribute(tmpX)
+        attTmp = model.getAttribute(tmpX_S)
         predY = classifier.predict(attTmp)
-        print('Seen Accuracy = {0:.4f}%'.format(np.mean(np.equal(predY, tmpY))*100))
+        print('Seen Accuracy = {0:.4f}%'.format(np.mean(np.equal(predY, tmpY_S))*100))
 
-        attTmp = model.getAttribute(unseenX)
+        attTmp = model.getAttribute(unseenX_S)
         predY = classifier.predict(attTmp)
-        print('Unseen Accuracy = {0:.4f}%'.format(np.mean(np.equal(predY, unseenY)) * 100))
+        print('Unseen Accuracy = {0:.4f}%'.format(np.mean(np.equal(predY, unseenY_S)) * 100))
 
-    # # 31 Horse, 30 Bicycle, 28 Cat, 22 Car, 16 Bird, 11 Dog
-    # tmpNameFile = 'Horse'
+    # 31 Horse, 30 Bicycle, 28 Cat, 22 Car, 16 Bird, 11 Dog
+    tmpNameFile = 'Horse'
     # horseInput = []
     # for k in range(unseenY.shape[0]):
     #     if unseenY[k] == 31:
     #         horseInput.append(unseenX[k])
     # horseInput = np.array(horseInput)
-    #
-    # g1 = tf.Graph()
-    # g2 = tf.Graph()
-    # with g1.as_default():
-    #     model = model2()
-    # with g2.as_default():
-    #     classifier = classify()
-    # a = model.getAttribute(horseInput[:10])
-    # # b = [printClassName(x) for x in  model.predict(horseInput[:10], allClassAtt)]
-    # b = [printClassName(x) for x in classifier.predict(a)]
-    # print(a.shape, len(b))
-    # print(b)
-    #
-    # import plotly.plotly as py
-    # import plotly.graph_objs as go
-    #
-    # py.sign_in('krittaphat.pug', 'oVTAbkhd2RQvodGOwrwp')
-    # trace = go.Heatmap(z = allClassNormalize,
-    #                    y = allClassName,
-    #                    x = allClassAttName)
-    # data = [trace]
-    # layout = go.Layout(title=globalV.FLAGS.KEY, width=1920, height=1080)
-    # fig = go.Figure(data=data, layout=layout)
-    # py.image.save_as(fig, filename='Z_'+globalV.FLAGS.KEY+'_Heat.png')
-    # # py.iplot(data, filename='basic-heatmap')
-    #
-    # trace = go.Heatmap(z = a,
-    #                    x = allClassAttName,
-    #                    y = b)
-    # data = [trace]
-    # layout = go.Layout(title=globalV.FLAGS.KEY+'_'+tmpNameFile, width=1920, height=1080,
-    #                    yaxis=dict(
-    #                        ticktext = b,
-    #                        tickvals = np.arange(len(b))))
-    # fig = go.Figure(data=data, layout=layout)
-    # py.image.save_as(fig, filename=globalV.FLAGS.KEY + '_Att_' + tmpNameFile + '.png')
-    #
-    # print('\nCheck predict output')
-    # # predictLabel = model.predict(horseInput[:10], allClassAtt)
-    # predictLabel = classifier.predict(a)
-    # print('Save image to '+globalV.FLAGS.KEY+'_'+tmpNameFile+'.png')
-    # plt.figure(figsize=(6, 24))
-    # for i in range(10):
-    #     plt.subplot(10, 2, i+1)
-    #     plt.title(printClassName(predictLabel[i]))
-    #     plt.imshow(horseInput[i], aspect='auto')
-    #     plt.axis('off')
-    # plt.tight_layout()
-    # plt.savefig(globalV.FLAGS.KEY+'_'+tmpNameFile+'.png')
-    # plt.clf()
+    s = np.arange(unseenX_S.shape[0])
+    np.random.shuffle(s)
+    horseInput = unseenX_S[s]
+
+    g1 = tf.Graph()
+    g2 = tf.Graph()
+    with g1.as_default():
+        model = model2()
+    with g2.as_default():
+        classifier = classify()
+    a = model.getAttribute(horseInput[:10])
+    # b = [printClassName(x) for x in  model.predict(horseInput[:10], allClassAtt)]
+    b = [printClassName(x) for x in classifier.predict(a)]
+    print(b)
+
+    import plotly.plotly as py
+    import plotly.graph_objs as go
+
+    py.sign_in('krittaphat.pug', 'oVTAbkhd2RQvodGOwrwp')
+    allClassNormalize = np.round(allClassAtt)
+    trace = go.Heatmap(z = allClassNormalize,
+                       y = allClassName,
+                       x = allClassAttName)
+    data = [trace]
+    layout = go.Layout(title=globalV.FLAGS.KEY, width=1920, height=1080)
+    fig = go.Figure(data=data, layout=layout)
+    py.image.save_as(fig, filename='Z_'+globalV.FLAGS.KEY+'_Heat.png')
+
+    trace = go.Heatmap(z = a,
+                       x = allClassAttName,
+                       y = b)
+    data = [trace]
+    layout = go.Layout(title=globalV.FLAGS.KEY+'_'+tmpNameFile, width=1920, height=1080,
+                       yaxis=dict(
+                           ticktext = b,
+                           tickvals = np.arange(len(b))))
+    fig = go.Figure(data=data, layout=layout)
+    py.image.save_as(fig, filename=globalV.FLAGS.KEY + '_Att_' + tmpNameFile + '.png')
+
+    print('\nCheck predict output')
+    # predictLabel = model.predict(horseInput[:10], allClassAtt)
+    predictLabel = classifier.predict(a)
+    print(predictLabel)
+    print('Save image to '+globalV.FLAGS.KEY+'_'+tmpNameFile+'.png')
+    plt.figure(figsize=(6, 24))
+    for i in range(10):
+        plt.subplot(10, 2, i+1)
+        plt.title(printClassName(predictLabel[i]))
+        plt.imshow(horseInput[i], aspect='auto')
+        plt.axis('off')
+    plt.tight_layout()
+    plt.savefig(globalV.FLAGS.KEY+'_'+tmpNameFile+'.png')
+    plt.clf()
 
 
 
