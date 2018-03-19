@@ -33,7 +33,7 @@ if __name__ == "__main__":
     parser.add_argument('--TD', type=int, default=0, help='Train/Restore Darknet')
     parser.add_argument('--TA', type=int, default=0, help='Train/Restore Attribute')
     parser.add_argument('--TC', type=int, default=0, help='Train/Restore Classify')
-    parser.add_argument('--PRE', type=int, default=5, help='1.CNN, 2.Model, 3.Classify')
+    parser.add_argument('--PRE', type=int, default=4, help='1.CNN, 2.Model, 3.Classify')
     globalV.FLAGS, _ = parser.parse_known_args()
 
     print('\nLoad Data for {0}'.format(globalV.FLAGS.KEY))
