@@ -30,11 +30,8 @@ class attribute (object):
         self.outAtt = tf.add(tf.matmul(hiddenF, self.wH_A), bH_A)
         self.outAttSig = tf.sigmoid(self.outAtt)
 
-        # Dot-Product similarity loss for seen class
-        self.totalLoss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=self.attYSeen, logits=self.outAtt))
-        # attYSeen_Reshape = tf.reshape(self.attYSeen, [-1, 10])
-        # outAtt_Reshape = tf.reshape(self.outAtt, [-1, 10])
-        # self.totalLoss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=attYSeen_Reshape, logits=outAtt_Reshape))
+        # Loss
+        self.totalLoss = tf.reduce_mean(tf.squared_difference(self.attYSeen, self.outAtt))
 
         # Define Optimizer
         updateOps = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
@@ -58,12 +55,12 @@ class attribute (object):
 
         # Log directory
         if globalV.FLAGS.TA == 1:
-            if tf.gfile.Exists(globalV.FLAGS.BASEDIR + globalV.FLAGS.KEY + '/attribute/logs'):
-                tf.gfile.DeleteRecursively(globalV.FLAGS.BASEDIR + globalV.FLAGS.KEY + '/attribute/logs')
-            tf.gfile.MakeDirs(globalV.FLAGS.BASEDIR + globalV.FLAGS.KEY + '/attribute/logs')
-        self.trainWriter = tf.summary.FileWriter(globalV.FLAGS.BASEDIR + globalV.FLAGS.KEY + '/attribute/logs/train', self.sess.graph)
-        self.valWriter = tf.summary.FileWriter(globalV.FLAGS.BASEDIR + globalV.FLAGS.KEY + '/attribute/logs/validate')
-        self.testWriter = tf.summary.FileWriter(globalV.FLAGS.BASEDIR + globalV.FLAGS.KEY + '/attribute/logs/test')
+            if tf.gfile.Exists(globalV.FLAGS.BASEDIR + globalV.FLAGS.DIR + '/attribute/logs'):
+                tf.gfile.DeleteRecursively(globalV.FLAGS.BASEDIR + globalV.FLAGS.DIR + '/attribute/logs')
+            tf.gfile.MakeDirs(globalV.FLAGS.BASEDIR + globalV.FLAGS.DIR + '/attribute/logs')
+        self.trainWriter = tf.summary.FileWriter(globalV.FLAGS.BASEDIR + globalV.FLAGS.DIR + '/attribute/logs/train', self.sess.graph)
+        self.valWriter = tf.summary.FileWriter(globalV.FLAGS.BASEDIR + globalV.FLAGS.DIR + '/attribute/logs/validate')
+        self.testWriter = tf.summary.FileWriter(globalV.FLAGS.BASEDIR + globalV.FLAGS.DIR + '/attribute/logs/test')
 
         # Start point and log
         self.Start = 1
@@ -74,11 +71,11 @@ class attribute (object):
             variables = tf.contrib.slim.get_variables_to_restore()
             variableToRestore = [v for v in variables if v.name.split('/')[0] != 'attribute']
             saverDarknet = tf.train.Saver(variableToRestore)
-            saverDarknet.restore(self.sess, globalV.FLAGS.BASEDIR + globalV.FLAGS.KEY + '/darknet/model/model.ckpt')
+            saverDarknet.restore(self.sess, globalV.FLAGS.BASEDIR + globalV.FLAGS.DIR + '/darknet/model/model.ckpt')
 
     def restoreModel(self):
-        self.saver.restore(self.sess, globalV.FLAGS.BASEDIR + globalV.FLAGS.KEY + '/attribute/model/model.ckpt')
-        npzFile = np.load(globalV.FLAGS.BASEDIR + globalV.FLAGS.KEY + '/attribute/model/checkpoint.npz')
+        self.saver.restore(self.sess, globalV.FLAGS.BASEDIR + globalV.FLAGS.DIR + '/attribute/model/model.ckpt')
+        npzFile = np.load(globalV.FLAGS.BASEDIR + globalV.FLAGS.DIR + '/attribute/model/checkpoint.npz')
         self.Start = npzFile['Start']
         self.Check = npzFile['Check']
 
@@ -127,14 +124,14 @@ class attribute (object):
             self.testWriter.add_summary(summary, i)
 
             if i % self.Check == 0:
-                savePath = self.saver.save(self.sess, globalV.FLAGS.BASEDIR + globalV.FLAGS.KEY + '/attribute/model/model.ckpt',global_step=i)
+                savePath = self.saver.save(self.sess, globalV.FLAGS.BASEDIR + globalV.FLAGS.DIR + '/attribute/model/model.ckpt',global_step=i)
                 print('Model saved in file: {0}'.format(savePath))
                 if i / self.Check == 10:
                     self.Check *= 10
 
             # Save State
-            np.savez(globalV.FLAGS.BASEDIR + globalV.FLAGS.KEY + '/attribute/model/checkpoint.npz', Start=i+1, Check=self.Check)
-            self.saver.save(self.sess, globalV.FLAGS.BASEDIR + globalV.FLAGS.KEY + '/attribute/model/model.ckpt')
+            np.savez(globalV.FLAGS.BASEDIR + globalV.FLAGS.DIR + '/attribute/model/checkpoint.npz', Start=i+1, Check=self.Check)
+            self.saver.save(self.sess, globalV.FLAGS.BASEDIR + globalV.FLAGS.DIR + '/attribute/model/model.ckpt')
 
     def getAttribute(self, trainX):
         outputAtt = None

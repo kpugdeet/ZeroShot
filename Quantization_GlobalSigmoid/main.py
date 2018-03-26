@@ -28,12 +28,11 @@ if __name__ == "__main__":
     parser.add_argument('--width', type=int, default=300, help='Width')
     parser.add_argument('--height', type=int, default=300, help='Height')
     parser.add_argument('--numClass', type=int, default=32, help='Number of class')
-    parser.add_argument('--numAtt', type=int, default=64, help='Dimension of Attribute')
+    parser.add_argument('--numAtt', type=int, default=1500, help='Dimension of Attribute')
     parser.add_argument('--batchSize', type=int, default=32, help='Number of batch size')
-    parser.add_argument('--TD', type=int, default=0, help='Train/Restore Darknet')
     parser.add_argument('--TA', type=int, default=0, help='Train/Restore Attribute')
     parser.add_argument('--TC', type=int, default=0, help='Train/Restore Classify')
-    parser.add_argument('--PRE', type=int, default=4, help='1.CNN, 2.Model, 3.Classify')
+    parser.add_argument('--PRE', type=int, default=5, help='1.CNN, 2.Model, 3.Classify')
     globalV.FLAGS, _ = parser.parse_known_args()
 
     print('\nLoad Data for {0}'.format(globalV.FLAGS.KEY))
@@ -59,22 +58,21 @@ if __name__ == "__main__":
             return testClass[pos-len(trainClass)-len(valClass)]
 
     # Adding word2Vec
-    # word2Vec_concatAtt = np.concatenate((trainVec, valVec, testVec), axis=0)
+    word2Vec_concatAtt = np.concatenate((trainVec, valVec, testVec), axis=0)
 
     # Concatenate all attribute
-    concatAtt = np.concatenate((trainAtt, valAtt, testAtt), axis=0)
+    # concatAtt = np.concatenate((trainAtt, valAtt, testAtt), axis=0)
     # concatAtt = np.concatenate((concatAtt, word2Vec_concatAtt), axis=1)
-    # concatAtt = word2Vec_concatAtt
+    concatAtt = word2Vec_concatAtt
 
     # Quantization
-    # bins = np.array([-1, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9])
-    # tmp_Q = np.digitize(concatAtt, bins, right=True)
-    # tmp_Q = tmp_Q - 1
-    # concatAtt_D = np.zeros((tmp_Q.shape[0], tmp_Q.shape[1], 10))
-    # for i in range(tmp_Q.shape[0]):
-    #     concatAtt_D[i][np.arange(tmp_Q.shape[1]), tmp_Q[i]] = 1
-    # concatAtt_D = concatAtt_D.reshape(tmp_Q.shape[0], -1)
-    concatAtt_D = np.around(concatAtt)
+    bins = np.array([-1, 0.2, 0.4, 0.6, 0.8])
+    tmp_Q = np.digitize(concatAtt, bins, right=True)
+    tmp_Q = tmp_Q - 1
+    concatAtt_D = np.zeros((tmp_Q.shape[0], tmp_Q.shape[1], 5))
+    for i in range(tmp_Q.shape[0]):
+        concatAtt_D[i][np.arange(tmp_Q.shape[1]), tmp_Q[i]] = 1
+    concatAtt_D = concatAtt_D.reshape(tmp_Q.shape[0], -1)
     print('\nNew attribute shape {0}'.format(concatAtt_D.shape))
 
     # Check where there is some class that has same attributes
@@ -223,11 +221,11 @@ if __name__ == "__main__":
         # fig = go.Figure(data=data, layout=layout)
         # py.image.save_as(fig, filename='Z_' + globalV.FLAGS.KEY + '_Heat.png')
 
-    g1 = tf.Graph()
-    with g1.as_default():
-        model = attribute()
-    lastWeights = model.getLastWeight()
-    print(lastWeights.shape)
+    # g1 = tf.Graph()
+    # with g1.as_default():
+    #     model = attribute()
+    # lastWeights = model.getLastWeight()
+    # print(lastWeights.shape)
 
 
     # attModel = attribute()
@@ -281,37 +279,45 @@ if __name__ == "__main__":
     #     predY = classifier.predict(attTmp)
     #     print('Class: {0:<15} Size: {1:<10} Accuracy = {2:.4f}%'.format(printClassName(z), eachInputX.shape[0], np.mean(np.equal(predY, eachInputY)) * 100))
 
-    # # Debug
-    # checkX = teX[:5]
-    # checkY = teY[:5]
-    # g1 = tf.Graph()
-    # g2 = tf.Graph()
-    # with g1.as_default():
-    #     model = attribute()
-    # with g2.as_default():
-    #     classifier = classify()
-    #
-    # a = model.getAttribute(checkX)
-    # b = [printClassName(x) for x in checkY]
-    # c = [printClassName(x) for x in classifier.predict(a)]
-    # d = classifier.predictScore(a)
-    # e = np.argsort(-d, axis=1)
-    # f = e[:,:5]
-    # g = [[printClassName(j) for j in i] for i in f]
-    #
-    # plt.figure(figsize=(5, 20))
-    # for i in range(5):
-    #     plt.subplot(5, 1, i+1)
-    #     h = list(g[i])
-    #     h.append(b[i])
-    #     plt.title(h)
-    #     plt.imshow(checkX[i], aspect='auto')
-    #     plt.axis('off')
-    # plt.tight_layout()
-    # plt.savefig('Z_' + globalV.FLAGS.KEY + '_Debug.png')
-    # plt.clf()
+    # Debug
+    checkX = np.concatenate((teX[:5], teX[20:25], vX[:5], vX[20:25]), axis=0)
+    checkY = np.concatenate((teY[:5], teY[20:25], vY[:5], vY[20:25]), axis=0)
+    g1 = tf.Graph()
+    g2 = tf.Graph()
+    with g1.as_default():
+        model = attribute()
+    with g2.as_default():
+        classifier = classify()
 
+    a = model.getAttribute(checkX)
+    b = [printClassName(x) for x in checkY]
+    c = [printClassName(x) for x in classifier.predict(a)]
+    d = classifier.predictScore(a)
+    e = np.argsort(-d, axis=1)
+    g = [[printClassName(j) for j in i] for i in e]
 
+    tmpSupTitle = "Train Classes : "
+    tmpSupTitle += " ".join(trainClass) + "\n"
+    tmpSupTitle += "Validation Classes : "
+    tmpSupTitle += " ".join(valClass) + "\n"
+    tmpSupTitle += "Test Classes : "
+    tmpSupTitle += " ".join(testClass) + "\n"
+    print(tmpSupTitle)
+    plt.figure(figsize=(20, 20))
+    for i in range(20):
+        plt.subplot(4, 5, i+1)
+        h = list(g[i])
+        tmpStr = ' ' + b[i]
+        for index, st in enumerate(h):
+            if index % 5 == 0:
+                tmpStr += '\n'
+            tmpStr += ' ' + st
+        plt.title(tmpStr, multialignment='left')
+        plt.imshow(checkX[i])
+        plt.axis('off')
+    plt.tight_layout()
+    plt.savefig('Z_' + globalV.FLAGS.KEY + '_Debug.png')
+    plt.clf()
 
 
 
