@@ -376,8 +376,8 @@ class loadData(object):
             valClass = pickle.load(open(globalV.FLAGS.BASEDIR + globalV.FLAGS.DIR + '/backup/valClass.pkl', 'rb'))
             valAtt = pickle.load(open(globalV.FLAGS.BASEDIR + globalV.FLAGS.DIR + '/backup/valAtt.pkl', 'rb'))
             valVec = pickle.load(open(globalV.FLAGS.BASEDIR + globalV.FLAGS.DIR + '/backup/valVec.pkl', 'rb'))
-            valX = np.load(globalV.FLAGS.BASEDIR + globalV.FLAGS.DIR + '/backup/valX.pkl.npy')
-            valY = np.load(globalV.FLAGS.BASEDIR + globalV.FLAGS.DIR + '/backup/valY.pkl.npy')
+            valX = np.load(globalV.FLAGS.BASEDIR + globalV.FLAGS.KEY + '/backup/valX.pkl.npy')
+            valY = np.load(globalV.FLAGS.BASEDIR + globalV.FLAGS.KEY + '/backup/valY.pkl.npy')
 
             testClass = pickle.load(open(globalV.FLAGS.BASEDIR + globalV.FLAGS.DIR + '/backup/testClass.pkl', 'rb'))
             testAtt = pickle.load(open(globalV.FLAGS.BASEDIR + globalV.FLAGS.DIR + '/backup/testAtt.pkl', 'rb'))

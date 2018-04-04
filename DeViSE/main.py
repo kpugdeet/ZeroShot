@@ -85,8 +85,8 @@ if __name__ == "__main__":
     # Attribute Modification
     concatAtt = np.concatenate((trainAtt, valAtt, testAtt), axis=0)
     word2Vec_concatAtt = np.concatenate((trainVec, valVec, testVec), axis=0)
-    concatAtt_D = np.concatenate((concatAtt, word2Vec_concatAtt), axis=1)
-    # concatAtt_D = word2Vec_concatAtt
+    # concatAtt_D = np.concatenate((concatAtt, word2Vec_concatAtt), axis=1)
+    concatAtt_D = word2Vec_concatAtt
 
     # Remove variation 51 Attributes std < 0.01
     # concatAtt_D = np.delete(concatAtt_D, [2, 7, 32, 35, 36, 43, 46, 47, 48, 49, 50, 58, 62], axis=1)
@@ -99,37 +99,16 @@ if __name__ == "__main__":
                 print('{0} {1}: {2} {3}'.format(i, printClassName(i), j, printClassName(j)))
     print('')
 
-
-    # Split train data 70/30 for each class
-    trX70 = None; trY70 = None; trAtt70 = None
-    trX30 = None; trY30 = None; trAtt30 = None
-    for z in range(0, len(trainClass)):
-        eachInputX = []
-        eachInputY = []
-        eachInputAtt = []
-        for k in range(0, trainX.shape[0]):
-            if trainY[k] == z:
-                eachInputX.append(trainX[k])
-                eachInputY.append(trainY[k])
-                eachInputAtt.append(concatAtt_D[trainY[k]])
-        eachInputX = np.array(eachInputX)
-        eachInputY = np.array(eachInputY)
-        eachInputAtt = np.array(eachInputAtt)
-        divEach = int(eachInputX.shape[0] * 0.7)
-        if trX70 is None:
-            trX70 = eachInputX[:divEach]
-            trY70 = eachInputY[:divEach]
-            trAtt70 = eachInputAtt[:divEach]
-            trX30 = eachInputX[divEach:]
-            trY30 = eachInputY[divEach:]
-            trAtt30 = eachInputAtt[divEach:]
-        else:
-            trX70 = np.concatenate((trX70,  eachInputX[:divEach]), axis=0)
-            trY70 = np.concatenate((trY70, eachInputY[:divEach]), axis=0)
-            trAtt70 = np.concatenate((trAtt70, eachInputAtt[:divEach]), axis=0)
-            trX30 = np.concatenate((trX30, eachInputX[divEach:]), axis=0)
-            trY30 = np.concatenate((trY30, eachInputY[divEach:]), axis=0)
-            trAtt30 = np.concatenate((trAtt30, eachInputAtt[divEach:]), axis=0)
+    # Train class
+    trDiv = int(trainX.shape[0] * 0.7)
+    s = np.arange(trainX.shape[0])
+    # np.random.shuffle(s)
+    tmp = list()
+    for i in range(trainY.shape[0]):
+        tmp.append(concatAtt_D[trainY[i]])
+    trX = trainX[s]
+    trY = trainY[s]
+    trAtt = np.array(tmp)[s]
 
     # Val class
     s = np.arange(valX.shape[0])
@@ -152,8 +131,7 @@ if __name__ == "__main__":
     teAtt = np.array(tmp)[s]
 
     print('Shuffle Data shape')
-    print(trX70.shape, trY70.shape, trAtt70.shape)
-    print(trX30.shape, trY30.shape, trAtt30.shape)
+    print(trX.shape, trY.shape, trAtt.shape)
     print(vX.shape, vY.shape, vAtt.shape)
     print(teX.shape, teY.shape, teAtt.shape)
 
@@ -166,62 +144,29 @@ if __name__ == "__main__":
     if globalV.FLAGS.OPT == 1:
         print('\nTrain Darknet')
         darknet = darknetModel()
-        darknet.trainDarknet(trX70, trY70, trX30, trY30)
+        darknet.trainDarknet(trX[:trDiv], trY[:trDiv], trX[trDiv:], trY[trDiv:])
 
     elif globalV.FLAGS.OPT == 2:
         print('\nTrain Attribute')
         attModel = attribute()
-        attModel.trainAtt(trX70, trAtt70, vX, vAtt, teX, teAtt)
-
-    elif globalV.FLAGS.OPT == 3:
-        print('\nTrain Classify')
-        classifier = classify()
-        classifier.trainClassify(concatAtt_D, np.arange(concatAtt_D.shape[0]), 0.5)
-
-        # g1 = tf.Graph()
-        # g2 = tf.Graph()
-        # with g1.as_default():
-        #     model = attribute()
-        # with g2.as_default():
-        #     classifier = classify()
-        # predictTrainAtt = model.getAttribute(trX)
-        # combineAtt = np.concatenate((predictTrainAtt, vAtt, teAtt), axis=0)
-        # combineY = np.concatenate((trY, valY, teY), axis=0)
-        # print(combineAtt.shape, combineY.shape)
-        # classifier.trainClassify(combineAtt, combineY, 0.5)
+        attModel.trainAtt(trX, trY, vX, vY, teX, teY, concatAtt_D)
 
     elif globalV.FLAGS.OPT == 4:
-        # g1 = tf.Graph()
-        # with g1.as_default():
-        #     model = attribute()
-        # attTmp = model.getAttribute(trX)
-        # print(attTmp.shape)
-        # tmpStd = np.std(attTmp, axis=0)
-        # print(tmpStd)
-        # print(tmpStd > 0.01)
-        # import sys
-        # sys.exit(0)
-
         print('\nClassify')
         g1 = tf.Graph()
-        g2 = tf.Graph()
         with g1.as_default():
             model = attribute()
-        with g2.as_default():
-            classifier = classify()
-        attTmp = model.getAttribute(trX70)
-        predY = classifier.predict(attTmp)
-        print('Train Accuracy = {0:.4f}%'.format(np.mean(np.equal(predY, trY70))*100))
-        attTmp = model.getAttribute(vX)
-        predY = classifier.predict(attTmp)
+
+        predY = model.predictClassIndex(trX, concatAtt_D)
+        print('Train Accuracy = {0:.4f}%'.format(np.mean(np.equal(predY, trY))*100))
+        predY = model.predictClassIndex(vX, concatAtt_D)
         print('Val Accuracy = {0:.4f}%'.format(np.mean(np.equal(predY, vY)) * 100))
-        attTmp = model.getAttribute(teX)
-        predY = classifier.predict(attTmp)
+        predY = model.predictClassIndex(teX, concatAtt_D)
         print('Test Accuracy = {0:.4f}%'.format(np.mean(np.equal(predY, teY)) * 100))
 
         # Euclidean distance
         print('\nEuclidean')
-        attTmp = model.getAttribute(trX70)
+        attTmp = model.getAttribute(trX)
         predY = []
         for pAtt in attTmp:
             distance = []
@@ -229,7 +174,7 @@ if __name__ == "__main__":
                 distance.append(spatial.distance.euclidean(pAtt, cAtt))
             ind = np.argsort(distance)[:1]
             predY.append(ind[0])
-        print('Train Accuracy = {0:.4f}%'.format(np.mean(np.equal(predY, trY70)) * 100))
+        print('Train Accuracy = {0:.4f}%'.format(np.mean(np.equal(predY, trY)) * 100))
         attTmp = model.getAttribute(vX)
         predY = []
         for pAtt in attTmp:
@@ -255,14 +200,13 @@ if __name__ == "__main__":
         for z in range(0, 15):
             eachInputX = []
             eachInputY = []
-            for k in range(0, trX30.shape[0]):
-                if trY30[k] == z:
-                    eachInputX.append(trX30[k])
-                    eachInputY.append(trY30[k])
+            for k in range(trX.shape[0]):
+                if trY[k] == z:
+                    eachInputX.append(trX[k])
+                    eachInputY.append(trY[k])
             eachInputX = np.array(eachInputX)
             eachInputY = np.array(eachInputY)
-            attTmp = model.getAttribute(eachInputX)
-            predY = classifier.predict(attTmp)
+            predY = model.predictClassIndex(eachInputX, concatAtt_D)
             print('Class: {0:<15} Size: {1:<10} Accuracy = {2:.4f}%'.format(printClassName(z), eachInputX.shape[0], np.mean(np.equal(predY, eachInputY)) * 100))
         # Loop each Validation class
         for z in range(15, 20):
@@ -274,8 +218,7 @@ if __name__ == "__main__":
                     eachInputY.append(vY[k])
             eachInputX = np.array(eachInputX)
             eachInputY = np.array(eachInputY)
-            attTmp = model.getAttribute(eachInputX)
-            predY = classifier.predict(attTmp)
+            predY = model.predictClassIndex(eachInputX, concatAtt_D)
             print('Class: {0:<15} Size: {1:<10} Accuracy = {2:.4f}%'.format(printClassName(z), eachInputX.shape[0], np.mean(np.equal(predY, eachInputY)) * 100))
         # Loop each Test class
         for z in range(20, 32):
@@ -287,8 +230,7 @@ if __name__ == "__main__":
                     eachInputY.append(teY[k])
             eachInputX = np.array(eachInputX)
             eachInputY = np.array(eachInputY)
-            attTmp = model.getAttribute(eachInputX)
-            predY = classifier.predict(attTmp)
+            predY = model.predictClassIndex(eachInputX, concatAtt_D)
             print('Class: {0:<15} Size: {1:<10} Accuracy = {2:.4f}%'.format(printClassName(z), eachInputX.shape[0], np.mean(np.equal(predY, eachInputY)) * 100))
 
         # Save sorting output
@@ -297,8 +239,8 @@ if __name__ == "__main__":
 
         a = model.getAttribute(checkX)
         b = [printClassName(x) for x in checkY]
-        c = [printClassName(x) for x in classifier.predict(a)]
-        d = classifier.predictScore(a)
+        c = [printClassName(x) for x in model.predictClassIndex(checkX, concatAtt_D)]
+        d = model.predictScore(checkX, concatAtt_D)
         e = np.argsort(-d, axis=1)
         g = [[printClassName(j) for j in i] for i in e]
 
