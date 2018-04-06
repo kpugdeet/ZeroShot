@@ -43,6 +43,7 @@ if __name__ == "__main__":
 
     # Choose what to do
     parser.add_argument('--OPT', type=int, default=4, help='1.Darknet, 2.Attribute, 3.Classify, 4.Accuracy')
+    parser.add_argument('--SELATT', type=int, default=1, help='1.Att, 2.Word2Vec, 3.Att+Word2Vec')
     globalV.FLAGS, _ = parser.parse_known_args()
 
     # Check Folder exist
@@ -85,8 +86,14 @@ if __name__ == "__main__":
     # Attribute Modification
     concatAtt = np.concatenate((trainAtt, valAtt, testAtt), axis=0)
     word2Vec_concatAtt = np.concatenate((trainVec, valVec, testVec), axis=0)
-    concatAtt_D = np.concatenate((concatAtt, word2Vec_concatAtt), axis=1)
-    # concatAtt_D = word2Vec_concatAtt
+    combineAtt = np.concatenate((concatAtt, word2Vec_concatAtt), axis=1)
+
+    if globalV.FLAGS.SELATT == 1:
+        concatAtt_D = concatAtt
+    elif globalV.FLAGS.SELATT == 2:
+        concatAtt_D = word2Vec_concatAtt
+    else:
+        concatAtt_D = combineAtt
 
     # Remove variation 51 Attributes std < 0.01
     # concatAtt_D = np.delete(concatAtt_D, [2, 7, 32, 35, 36, 43, 46, 47, 48, 49, 50, 58, 62], axis=1)
@@ -98,7 +105,6 @@ if __name__ == "__main__":
             if np.array_equal(concatAtt_D[i], concatAtt_D[j]):
                 print('{0} {1}: {2} {3}'.format(i, printClassName(i), j, printClassName(j)))
     print('')
-
 
     # Split train data 70/30 for each class
     trX70 = None; trY70 = None; trAtt70 = None
@@ -209,45 +215,85 @@ if __name__ == "__main__":
             model = attribute()
         with g2.as_default():
             classifier = classify()
-        attTmp = model.getAttribute(trX70)
-        predY = classifier.predict(attTmp)
-        print('Train Accuracy = {0:.4f}%'.format(np.mean(np.equal(predY, trY70))*100))
-        attTmp = model.getAttribute(vX)
-        predY = classifier.predict(attTmp)
-        print('Val Accuracy = {0:.4f}%'.format(np.mean(np.equal(predY, vY)) * 100))
-        attTmp = model.getAttribute(teX)
-        predY = classifier.predict(attTmp)
-        print('Test Accuracy = {0:.4f}%'.format(np.mean(np.equal(predY, teY)) * 100))
+        # attTmp = model.getAttribute(trX30)
+        # predY = classifier.predict(attTmp)
+        # print('Train Accuracy = {0:.4f}%'.format(np.mean(np.equal(predY, trY30))*100))
+        # attTmp = model.getAttribute(vX)
+        # predY = classifier.predict(attTmp)
+        # print('Val Accuracy = {0:.4f}%'.format(np.mean(np.equal(predY, vY)) * 100))
+        # attTmp = model.getAttribute(teX)
+        # predY = classifier.predict(attTmp)
+        # print('Test Accuracy = {0:.4f}%'.format(np.mean(np.equal(predY, teY)) * 100))
+        #
+        # # Euclidean distance
+        # print('\nEuclidean')
+        # attTmp = model.getAttribute(trX30)
+        # predY = []
+        # for pAtt in attTmp:
+        #     distance = []
+        #     for cAtt in concatAtt_D:
+        #         distance.append(spatial.distance.euclidean(pAtt, cAtt))
+        #     ind = np.argsort(distance)[:1]
+        #     predY.append(ind[0])
+        # print('Train Accuracy = {0:.4f}%'.format(np.mean(np.equal(predY, trY30)) * 100))
+        # attTmp = model.getAttribute(vX)
+        # predY = []
+        # for pAtt in attTmp:
+        #     distance = []
+        #     for cAtt in concatAtt_D:
+        #         distance.append(spatial.distance.euclidean(pAtt, cAtt))
+        #     ind = np.argsort(distance)[:1]
+        #     predY.append(ind[0])
+        # print('Val Accuracy = {0:.4f}%'.format(np.mean(np.equal(predY, vY)) * 100))
+        # attTmp = model.getAttribute(teX)
+        # predY = []
+        # for pAtt in attTmp:
+        #     distance = []
+        #     for cAtt in concatAtt_D:
+        #         distance.append(spatial.distance.euclidean(pAtt, cAtt))
+        #     ind = np.argsort(distance)[:1]
+        #     predY.append(ind[0])
+        # print('Test Accuracy = {0:.4f}%'.format(np.mean(np.equal(predY, teY)) * 100))
 
-        # Euclidean distance
-        print('\nEuclidean')
-        attTmp = model.getAttribute(trX70)
-        predY = []
-        for pAtt in attTmp:
-            distance = []
-            for cAtt in concatAtt_D:
-                distance.append(spatial.distance.euclidean(pAtt, cAtt))
-            ind = np.argsort(distance)[:1]
-            predY.append(ind[0])
-        print('Train Accuracy = {0:.4f}%'.format(np.mean(np.equal(predY, trY70)) * 100))
-        attTmp = model.getAttribute(vX)
-        predY = []
-        for pAtt in attTmp:
-            distance = []
-            for cAtt in concatAtt_D:
-                distance.append(spatial.distance.euclidean(pAtt, cAtt))
-            ind = np.argsort(distance)[:1]
-            predY.append(ind[0])
-        print('Val Accuracy = {0:.4f}%'.format(np.mean(np.equal(predY, vY)) * 100))
-        attTmp = model.getAttribute(teX)
-        predY = []
-        for pAtt in attTmp:
-            distance = []
-            for cAtt in concatAtt_D:
-                distance.append(spatial.distance.euclidean(pAtt, cAtt))
-            ind = np.argsort(distance)[:1]
-            predY.append(ind[0])
-        print('Test Accuracy = {0:.4f}%'.format(np.mean(np.equal(predY, teY)) * 100))
+
+        # MAP Score
+
+
+        # Top Accuracy
+        topAccList = [1, 3, 5, 7, 10]
+        for topAcc in topAccList:
+            print('\nTop {0} Accuracy'.format(topAcc))
+            tmpAtt = model.getAttribute(trX30)
+            tmpScore = classifier.predictScore(tmpAtt)
+            tmpSort = np.argsort(-tmpScore, axis=1)
+            tmpPred = tmpSort[:,:topAcc]
+            count = 0
+            for i, p in enumerate(tmpPred):
+                if trY30[i] in p:
+                    count += 1
+            print('Train Accuracy = {0:.4f}%'.format((count/trX30.shape[0])*100))
+            tmpAtt = model.getAttribute(vX)
+            tmpScore = classifier.predictScore(tmpAtt)
+            tmpSort = np.argsort(-tmpScore, axis=1)
+            tmpPred = tmpSort[:, :topAcc]
+            count = 0
+            for i, p in enumerate(tmpPred):
+                if vY[i] in p:
+                    count += 1
+            print('Val Accuracy = {0:.4f}%'.format((count / vX.shape[0]) * 100))
+            tmpAtt = model.getAttribute(teX)
+            tmpScore = classifier.predictScore(tmpAtt)
+            tmpSort = np.argsort(-tmpScore, axis=1)
+            tmpPred = tmpSort[:, :topAcc]
+            count = 0
+            for i, p in enumerate(tmpPred):
+                if teY[i] in p:
+                    count += 1
+            print('Test Accuracy = {0:.4f}%'.format((count / teX.shape[0]) * 100))
+
+        import sys
+        sys.exit(0)
+
 
         # Accuracy for each class
         print('')
