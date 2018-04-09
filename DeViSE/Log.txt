@@ -1,0 +1,61 @@
+
+Load Data for APY
+         numClass     classAtt   classVec               inputX    outputY    outputAtt
+Train:         15     (15, 64)  (15, 300)  (9499, 300, 300, 3)    (9499,)   (9499, 64)
+Valid:          5      (5, 64)   (5, 300)  (1470, 300, 300, 3)    (1470,)   (1470, 64)
+Test:          12     (12, 64)  (12, 300)  (4370, 300, 300, 3)    (4370,)   (4370, 64)
+
+Check matching classes attributes
+
+Shuffle Data shape
+(9499, 300, 300, 3) (9499,) (9499, 300)
+(1470, 300, 300, 3) (1470,) (1470, 300)
+(4370, 300, 300, 3) (4370,) (4370, 300)
+
+Classify
+Train Accuracy = 99.9684%
+Val Accuracy = 0.0000%
+Test Accuracy = 0.0000%
+
+Euclidean
+Train Accuracy = 14.0541%
+Val Accuracy = 0.0000%
+Test Accuracy = 7.3913%
+
+Class: sheep           Size: 234        Accuracy = 100.0000%
+Class: chair           Size: 911        Accuracy = 100.0000%
+Class: motorbike       Size: 297        Accuracy = 100.0000%
+Class: bag             Size: 349        Accuracy = 100.0000%
+Class: bottle          Size: 576        Accuracy = 100.0000%
+Class: person          Size: 5071       Accuracy = 99.9803%
+Class: monkey          Size: 186        Accuracy = 100.0000%
+Class: Aeroplane       Size: 370        Accuracy = 100.0000%
+Class: centaur         Size: 51         Accuracy = 100.0000%
+Class: donkey          Size: 139        Accuracy = 100.0000%
+Class: train           Size: 176        Accuracy = 100.0000%
+Class: dog             Size: 484        Accuracy = 99.5868%
+Class: wolf            Size: 205        Accuracy = 100.0000%
+Class: cow             Size: 197        Accuracy = 100.0000%
+Class: sofa            Size: 253        Accuracy = 100.0000%
+Class: goat            Size: 163        Accuracy = 0.0000%
+Class: bird            Size: 549        Accuracy = 0.0000%
+Class: jetski          Size: 399        Accuracy = 0.0000%
+Class: carriage        Size: 152        Accuracy = 0.0000%
+Class: statue          Size: 207        Accuracy = 0.0000%
+Class: bus             Size: 150        Accuracy = 0.0000%
+Class: tv_monitor      Size: 299        Accuracy = 0.0000%
+Class: car             Size: 1022       Accuracy = 0.0000%
+Class: mug             Size: 226        Accuracy = 0.0000%
+Class: zebra           Size: 244        Accuracy = 0.0000%
+Class: boat            Size: 453        Accuracy = 0.0000%
+Class: dining_table    Size: 224        Accuracy = 0.0000%
+Class: potted_plant    Size: 436        Accuracy = 0.0000%
+Class: cat             Size: 380        Accuracy = 0.0000%
+Class: building        Size: 323        Accuracy = 0.0000%
+Class: bicycle         Size: 307        Accuracy = 0.0000%
+Class: horse           Size: 306        Accuracy = 0.0000%
+
+Train Classes : sheep chair motorbike bag bottle person monkey Aeroplane centaur donkey train dog wolf cow sofa
+Validation Classes : goat bird jetski carriage statue
+Test Classes : bus tv_monitor car mug zebra boat dining_table potted_plant cat building bicycle horse
+
